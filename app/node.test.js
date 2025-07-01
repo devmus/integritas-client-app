@@ -1,8 +1,4 @@
-const {
-  successMsg,
-  sendDiscordAlert,
-  errorMsg,
-} = require("../utils/respondMsg");
+const { successMsg, errorMsg } = require("../utils/respondMsg");
 
 module.exports.blockTests = async (baseUrl) => {
   const parameter = "/block";
@@ -22,11 +18,9 @@ module.exports.blockTests = async (baseUrl) => {
 
     const msg = successMsg(baseUrl, parameter, res.status, block);
 
-    await sendDiscordAlert("node", msg);
+    console.log(msg);
   } catch (err) {
     console.error("🚨 FETCH ERROR:", err);
     const msg = errorMsg(baseUrl, parameter, 500, err.message);
-
-    await sendDiscordAlert("node", msg);
   }
 };

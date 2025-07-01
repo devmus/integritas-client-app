@@ -1,85 +1,36 @@
 const axios = require("axios");
-const {
-  successMsg,
-  errorMsg,
-  sendDiscordAlert,
-} = require("../utils/respondMsg");
+const { successMsg, errorMsg } = require("../utils/respondMsg");
 const FormData = require("form-data");
 const fs = require("fs");
 const path = require("path");
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-module.exports.stampTests = async (baseUrl) => {
-  const resHashTest = await hashTest(baseUrl);
-  if (resHashTest === "FAILED") return;
-  await delay(3 * 60 * 1000);
-  const resStampDataTest = await stampDataTest(baseUrl, resHashTest);
-  if (resHashTest === "FAILED") return;
-  await delay(3 * 60 * 1000);
-  const resStatusTest = await statusTest(baseUrl, [resStampDataTest]);
-  if (resHashTest === "FAILED") return;
-  await delay(3 * 60 * 1000);
-  await verifyTest(baseUrl, resStatusTest);
+module.exports.sendData = async (payload) => {
+  const resStampDataTest = await sendDataPackage(payload);
+  return resStampDataTest;
+  // if (resHashTest === "FAILED") return;
+  // await delay(3 * 60 * 1000);
+  // const resStatusTest = await statusTest(baseUrl, [resStampDataTest]);
+  // if (resHashTest === "FAILED") return;
+  // await delay(3 * 60 * 1000);
+  // await verifyTest(baseUrl, resStatusTest);
 };
 
-////////////
-// TEST 1 //
-////////////
+//////////////////
+// SEND PAYLOAD //
+//////////////////
 
-const hashTest = async (baseUrl) => {
-  const filePath = path.resolve(__dirname, "../files/abc.md");
-  const endUrl = "/file/hash/";
-
-  try {
-    // Create form-data
-    const form = new FormData();
-    const buffer = fs.readFileSync(filePath);
-
-    form.append("file", buffer, {
-      filename: "abc.md",
-      contentType: "text/markdown", // or whatever mimetype is correct
-    });
-
-    const res = await axios.post(`${baseUrl}${endUrl}`, form, {
-      headers: {
-        ...form.getHeaders(),
-        "x-api-key": process.env.API_KEY,
-        "x-request-id": "RUNTIME CHECK",
-      },
-    });
-
-    const msg = successMsg(baseUrl, endUrl, res.status, res.data);
-
-    await sendDiscordAlert("core", msg);
-    return res.data.data.hash;
-  } catch (err) {
-    let msg = "";
-
-    if (err?.response?.data) {
-      msg = errorMsg(baseUrl, endUrl, err.response?.status, err.response.data);
-    } else {
-      msg = errorMsg(baseUrl, endUrl, err.response?.status, err.message);
-    }
-
-    await sendDiscordAlert("core", msg);
-    return "FAILED";
-  }
-};
-
-////////////
-// TEST 2 //
-////////////
-
-const stampDataTest = async (baseUrl, hash) => {
-  const endUrl = "/timestamp/post/";
+const sendDataPackage = async (payload) => {
+  const baseUrl = process.env.INTEGRITAS_CORE_API_BASE_URL;
+  const endUrl = "/edge/stamp";
 
   // const payload = JSON.stringify({ hash });
 
   try {
     const res = await axios.post(
       `${baseUrl}${endUrl}`,
-      { hash },
+      { payload },
       {
         headers: {
           "Content-Type": "application/json",
@@ -91,8 +42,10 @@ const stampDataTest = async (baseUrl, hash) => {
 
     const msg = successMsg(baseUrl, endUrl, res.status, res.data);
 
-    await sendDiscordAlert("core", msg);
-    return res.data.data.uid;
+    console.log(msg);
+
+    return "success";
+    // return res.data.data.uid;
   } catch (err) {
     let msg = "";
 
@@ -102,10 +55,13 @@ const stampDataTest = async (baseUrl, hash) => {
       msg = errorMsg(baseUrl, endUrl, err.response?.status, err.message);
     }
 
-    await sendDiscordAlert("core", msg);
     return "FAILED";
   }
 };
+
+///////////////
+// THIS WILL BE DONE IN OTHER APP
+///////////////
 
 ////////////
 // TEST 3 //
@@ -133,7 +89,6 @@ const statusTest = async (baseUrl, uids) => {
 
     const statusResponse = { data, root, proof, address };
 
-    await sendDiscordAlert("core", msg);
     return statusResponse;
   } catch (err) {
     let msg = "";
@@ -144,7 +99,6 @@ const statusTest = async (baseUrl, uids) => {
       msg = errorMsg(baseUrl, endUrl, err.response?.status, err.message);
     }
 
-    await sendDiscordAlert("core", msg);
     return "FAILED";
   }
 };
@@ -178,14 +132,12 @@ const verifyTest = async (baseUrl, jsonProof) => {
 
     const msg = successMsg(baseUrl, endUrl, res.status, res.data);
 
-    await sendDiscordAlert("core", msg);
     return res.data.data.hash;
   } catch (err) {
     const msg = err?.response?.data
       ? errorMsg(baseUrl, endUrl, err.response?.status, err.response.data)
       : errorMsg(baseUrl, endUrl, err.response?.status, err.message);
 
-    await sendDiscordAlert("core", msg);
     return "FAILED";
   }
 };
