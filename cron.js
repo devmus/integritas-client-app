@@ -9,12 +9,13 @@ const { prepareData } = require("./app/hash");
 // Add other test imports here...
 
 const runApp = async () => {
-  await keyPair();
-  const payload = await prepareData();
-  const response = await sendData(payload);
+  console.log("Checking keys");
 
-  console.log("TO SEND:", payload);
-  console.log("RESPONSE:", response);
+  await keyPair();
+  console.log("Preparing data");
+  const message = await prepareData();
+  console.log("Sending data");
+  const response = await sendData(message);
 };
 
 const runNodeTest = async () => {

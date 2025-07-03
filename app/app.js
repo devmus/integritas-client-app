@@ -3,11 +3,12 @@ const { successMsg, errorMsg } = require("../utils/respondMsg");
 const FormData = require("form-data");
 const fs = require("fs");
 const path = require("path");
+const config = require("../clientConfig/config.json");
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-module.exports.sendData = async (payload) => {
-  const resStampDataTest = await sendDataPackage(payload);
+module.exports.sendData = async (message) => {
+  const resStampDataTest = await sendDataPackage(message);
   return resStampDataTest;
   // if (resHashTest === "FAILED") return;
   // await delay(3 * 60 * 1000);
@@ -21,30 +22,26 @@ module.exports.sendData = async (payload) => {
 // SEND PAYLOAD //
 //////////////////
 
-const sendDataPackage = async (payload) => {
-  const baseUrl = process.env.INTEGRITAS_CORE_API_BASE_URL;
+const sendDataPackage = async (message) => {
+  const baseUrl = config[0].serverUrl;
   const endUrl = "/edge/stamp";
-
-  // const payload = JSON.stringify({ hash });
 
   try {
     const res = await axios.post(
       `${baseUrl}${endUrl}`,
-      { payload },
+      { message },
       {
         headers: {
           "Content-Type": "application/json",
           "x-api-key": process.env.API_KEY,
-          "x-request-id": "RUNTIME CHECK",
+          "x-request-id": "APP CLIENT TEST",
         },
       }
     );
 
     const msg = successMsg(baseUrl, endUrl, res.status, res.data);
 
-    console.log(msg);
-
-    return "success";
+    return msg;
     // return res.data.data.uid;
   } catch (err) {
     let msg = "";
@@ -54,6 +51,8 @@ const sendDataPackage = async (payload) => {
     } else {
       msg = errorMsg(baseUrl, endUrl, err.response?.status, err.message);
     }
+
+    console.log(msg);
 
     return "FAILED";
   }
